@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Adobe Target Global Mbox Demo</title>
+
+    <!-- Preconnect / Prefetch for Adobe domains -->
+    <link rel="preconnect" href="//dpm.demdex.net">
+    <link rel="preconnect" href="//cm.everesttech.net">
+    <link rel="preconnect" href="//techmarketingdemos.tt.omtrdc.net">
+    <link rel="dns-prefetch" href="//dpm.demdex.net">
+    <link rel="dns-prefetch" href="//cm.everesttech.net">
+    <link rel="dns-prefetch" href="//techmarketingdemos.tt.omtrdc.net">
+
+    <!-- DigitalData (可給 Target / Analytics 使用) -->
+    <script>
+        var digitalData = {
+            "page": {
+                "pageInfo": {
+                    "pageName": "Home"
+                }
+            }
+        };
+    </script>
+
+    <!-- 預防閃屏 -->
+    <script>
+        (function (g, b, d, f) {
+            (function (a, c, d) {
+                if (a) {
+                    var e = b.createElement("style");
+                    e.id = c;
+                    e.innerHTML = d;
+                    a.appendChild(e);
+                }
+            })(b.getElementsByTagName("head")[0], "at-body-style", d);
+            setTimeout(function () {
+                var a = b.getElementsByTagName("head")[0];
+                if (a) {
+                    var c = b.getElementById("at-body-style");
+                    c && a.removeChild(c);
+                }
+            }, f)
+        })(window, document, "body {opacity: 0 !important}", 3000);
+    </script>
+
+    <!-- Adobe Launch (已內含 at.js v1.x) -->
+    <script src="https://assets.adobedtm.com/c88561b17244/34dbf331cabd/launch-6e41b0bf85df-development.min.js"
+        async></script>
+</head>
+
+<body>
+    <h1>Target Global Mbox Demo</h1>
+    <p>這個頁面正在使用 <strong>target-global-mbox</strong> 做 AB Test。</p>
+
+    <div id="contentArea" class="mboxDefault">
+        <p>這裡是預設內容，若 Target 活動有投放，會被替換。</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('🌐 Requesting offer for target-global-mbox...');
+            adobe.target.getOffer({
+                mbox: 'target-global-mbox',
+                success: function (offers) {
+                    console.log("📦 Target offer response:", offers);
+                    adobe.target.applyOffer({
+                        mbox: 'target-global-mbox',
+                        offer: offers
+                    });
+                    console.log('✅ Offer applied to target-global-mbox.');
+                },
+                error: function (status, error) {
+                    console.error('❌ Target getOffer Error:', status, error);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

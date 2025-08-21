@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Adobe Target Global Mbox Demo</title>
+    <title>Adobe Target Demo - 0815test</title>
 
     <!-- Preconnect / Prefetch for Adobe domains -->
     <link rel="preconnect" href="//dpm.demdex.net">
@@ -50,25 +50,32 @@
 </head>
 
 <body>
-    <h1>Target Global Mbox Demo</h1>
-    <p>This page is using <strong>target-global-mbox</strong> for AB testing.</p>
+    <h1>Adobe Target Demo</h1>
+    <p>This page is using <strong>0815test</strong> mbox for AB testing.</p>
 
     <div id="contentArea" class="mboxDefault">
         <p>This is the default content. If a Target activity is delivered, it will be replaced.</p>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('🌐 Requesting offer for target-global-mbox...');
+        // 等待 Adobe Target SDK 就緒
+        document.addEventListener('at-request-succeeded', function () {
+            console.log('✅ Adobe Target ready. Requesting offer for 0815test...');
+
             adobe.target.getOffer({
-                mbox: 'target-global-mbox',
+                mbox: '0815test',
                 success: function (offers) {
-                    console.log("📦 Target offer response:", offers);
-                    adobe.target.applyOffer({
-                        mbox: 'target-global-mbox',
-                        offer: offers
-                    });
-                    console.log('✅ Offer applied to target-global-mbox.');
+                    console.log('📦 Target offer response:', offers);
+
+                    if (offers && offers.length > 0) {
+                        adobe.target.applyOffer({
+                            mbox: '0815test',
+                            offer: offers
+                        });
+                        console.log('✅ Offer applied to 0815test.');
+                    } else {
+                        console.warn('⚠️ Offer is empty. Check activity settings or audience conditions.');
+                    }
                 },
                 error: function (status, error) {
                     console.error('❌ Target getOffer Error:', status, error);

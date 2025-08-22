@@ -4,24 +4,8 @@
 <head>
     <title>Adobe Target Demo - 0815test</title>
 
-    <!-- Preconnect / Prefetch for Adobe domains -->
-    <link rel="preconnect" href="//dpm.demdex.net">
-    <link rel="preconnect" href="//cm.everesttech.net">
-    <link rel="preconnect" href="//techmarketingdemos.tt.omtrdc.net">
-    <link rel="dns-prefetch" href="//dpm.demdex.net">
-    <link rel="dns-prefetch" href="//cm.everesttech.net">
-    <link rel="dns-prefetch" href="//techmarketingdemos.tt.omtrdc.net">
-
-    <!-- DigitalData (可給 Target / Analytics 使用) -->
-    <script>
-        var digitalData = {
-            "page": {
-                "pageInfo": {
-                    "pageName": "Home"
-                }
-            }
-        };
-    </script>
+    <!-- Adobe Launch (已內含 at.js v1.x) -->
+    <script src="https://assets.adobedtm.com/c88561b17244/34dbf331cabd/launch-6e41b0bf85df-development.min.js" defer></script>
 
     <!-- 預防閃屏 -->
     <script>
@@ -43,10 +27,6 @@
             }, f)
         })(window, document, "body {opacity: 0 !important}", 3000);
     </script>
-
-    <!-- Adobe Launch (已內含 at.js v1.x) -->
-    <script src="https://assets.adobedtm.com/c88561b17244/34dbf331cabd/launch-6e41b0bf85df-development.min.js"
-        async></script>
 </head>
 
 <body>
@@ -58,9 +38,8 @@
     </div>
 
     <script>
-        // 等待 Adobe Target SDK 就緒
-        document.addEventListener('at-request-succeeded', function () {
-            console.log('✅ Adobe Target ready. Requesting offer for 0815test...');
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('🌐 Requesting offer for 0815test...');
 
             adobe.target.getOffer({
                 mbox: '0815test',

@@ -1,75 +1,126 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-    <title>Adobe Target Demo - 0815test</title>
+  <meta charset="utf-8" />
+  <title>Adobe Target Demo - 0815test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Preconnect / Prefetch for Adobe domains -->
-    <link rel="preconnect" href="//dpm.demdex.net">
-    <link rel="preconnect" href="//cm.everesttech.net">
-    <link rel="preconnect" href="//techmarketingdemos.tt.omtrdc.net">
-    <link rel="dns-prefetch" href="//dpm.demdex.net">
-    <link rel="dns-prefetch" href="//cm.everesttech.net">
-    <link rel="dns-prefetch" href="//techmarketingdemos.tt.omtrdc.net">
+  <!-- Preconnect / Prefetch for Adobe domains -->
+  <link rel="preconnect" href="//dpm.demdex.net">
+  <link rel="preconnect" href="//cm.everesttech.net">
+  <link rel="preconnect" href="//techmarketingdemos.tt.omtrdc.net">
+  <link rel="dns-prefetch" href="//dpm.demdex.net">
+  <link rel="dns-prefetch" href="//cm.everesttech.net">
+  <link rel="dns-prefetch" href="//techmarketingdemos.tt.omtrdc.net">
 
-    <!-- Adobe Launch (內含 at.js v1.x 或 v2.x) -->
-    <script src="https://assets.adobedtm.com/c88561b17244/34dbf331cabd/launch-6e41b0bf85df-development.min.js" defer></script>
+  <!-- （選用）簡單 data layer；也可改由 Launch 設定 -->
+  <script>
+    window.digitalData = {
+      page: { pageInfo: { pageName: "home" } }
+    };
+  </script>
 
-    <!-- 預防閃屏 -->
-    <script>
-        (function (g, b, d, f) {
-            (function (a, c, d) {
-                if (a) {
-                    var e = b.createElement("style");
-                    e.id = c;
-                    e.innerHTML = d;
-                    a.appendChild(e);
-                }
-            })(b.getElementsByTagName("head")[0], "at-body-style", d);
-            setTimeout(function () {
-                var a = b.getElementsByTagName("head")[0];
-                if (a) {
-                    var c = b.getElementById("at-body-style");
-                    c && a.removeChild(c);
-                }
-            }, f)
-        })(window, document, "body {opacity: 0 !important}", 3000);
-    </script>
+  <!-- Anti-flicker（避免在套用 Offer 前閃屏） -->
+  <script>
+    (function (g, b, css, ms) {
+      (function (head, id, rule) {
+        if (!head) return;
+        var s = b.createElement("style");
+        s.id = id; s.innerHTML = rule;
+        head.appendChild(s);
+      })(b.getElementsByTagName("head")[0], "at-body-style", css);
+
+      setTimeout(function () {
+        var head = b.getElementsByTagName("head")[0];
+        if (!head) return;
+        var s = b.getElementById("at-body-style");
+        if (s) head.removeChild(s);
+      }, ms);
+    })(window, document, "body{opacity:0!important}", 3000);
+  </script>
+
+  <!-- Adobe Launch（內含 at.js；用 defer，確保 DOM 解析後再執行） -->
+  <script
+    src="https://assets.adobedtm.com/c88561b17244/34dbf331cabd/launch-6e41b0bf85df-development.min.js"
+    defer>
+  </script>
 </head>
 
 <body>
-    <h1>Adobe Target Demo</h1>
-    <p>This page is using <strong>0815test</strong> mbox for AB testing.</p>
+  <h1>Adobe Target Demo</h1>
+  <p>This page is using <strong>0815test</strong> mbox for A/B testing.</p>
 
-    <div id="0815test" class="mboxDefault">
-        <p>This is the default content. If a Target activity is delivered, it will be replaced.</p>
-    </div>
+  <!-- 自訂 mbox 容器（ID 要與 getOffer 的 mbox 名稱一致） -->
+  <div id="0815test" class="mboxDefault">
+    <p>This is the default content. If a Target activity is delivered, it will be replaced.</p>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('🌐 Requesting offer for 0815test...');
+  <script>
+    // （選用）若頁面載入時 AppMeasurement 存在，設定 pageName 以避免報表出現 undefined
+    (function setPageNameIfAppMeasurementExists() {
+      try {
+        if (window.s && !window.s.pageName) {
+          window.s.pageName = (document.title || "0815test") + "";
+          console.log("ℹ️ AppMeasurement pageName set to:", window.s.pageName);
+        } else {
+          console.log("ℹ️ The page name is:",
+            (window.s && window.s.pageName) || (window.digitalData && window.digitalData.page && window.digitalData.page.pageInfo && window.digitalData.page.pageInfo.pageName) || "undefined"
+          );
+        }
+      } catch (e) { /* 靜默處理 */ }
+    })();
 
-            adobe.target.getOffer({
-                mbox: '0815test',
-                success: function (offers) {
-                    console.log('📦 Target offer response:', offers);
-
-                    if (offers && offers.length > 0) {
-                        adobe.target.applyOffer({
-                            mbox: '0815test',
-                            offer: offers
-                        });
-                        console.log('✅ Offer applied to 0815test.');
-                    } else {
-                        console.warn('⚠️ Offer is empty. Check activity settings or audience conditions.');
-                    }
-                },
-                error: function (status, error) {
-                    console.error('❌ Target getOffer Error:', status, error);
-                }
-            });
+    // 發送並套用 0815test 的 Offer
+    function requestOffer0815() {
+      console.log("🌐 Requesting offer for 0815test...");
+      try {
+        adobe.target.getOffer({
+          mbox: "0815test",
+          success: function (offers) {
+            console.log("📦 Target offer response:", offers);
+            if (offers && offers.length > 0) {
+              adobe.target.applyOffer({ mbox: "0815test", offer: offers });
+              console.log("✅ Offer applied to 0815test.");
+            } else {
+              console.warn("⚠️ Offer is empty. Check activity/audience/mbox settings.");
+            }
+          },
+          error: function (status, error) {
+            console.error("❌ Target getOffer Error:", status, error);
+          }
         });
-    </script>
-</body>
+      } catch (err) {
+        console.error("❌ adobe.target not ready or getOffer failed:", err);
+      }
+    }
 
+    // 等待 at.js 載入完成後再呼叫（避免 DOMContentLoaded 時 SDK 尚未可用）
+    function waitForTargetAndRun(maxWaitMs) {
+      var start = Date.now();
+      (function poll() {
+        var ready = !!(window.adobe && adobe.target && typeof adobe.target.getOffer === "function");
+        if (ready) {
+          // 移除 anti-flicker（若尚未自動移除）
+          var s = document.getElementById("at-body-style");
+          if (s && s.parentNode) s.parentNode.removeChild(s);
+          requestOffer0815();
+          return;
+        }
+        if (Date.now() - start > (maxWaitMs || 5000)) {
+          console.error("⏰ Timeout waiting for Adobe Target SDK.");
+          // 逾時也移除 anti-flicker，避免整頁長期隱形
+          var st = document.getElementById("at-body-style");
+          if (st && st.parentNode) st.parentNode.removeChild(st);
+          return;
+        }
+        setTimeout(poll, 100);
+      })();
+    }
+
+    // DOM Ready 後啟動輪詢，確保 at.js 已可用
+    document.addEventListener("DOMContentLoaded", function () {
+      waitForTargetAndRun(5000);
+    });
+  </script>
+</body>
 </html>

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>Adobe Target Demo - 0815test (Fixed)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 建議：以 http/https 方式開啟頁面，不要用 file:// -->
+
+  <!-- Preconnect / Prefetch for Adobe domains -->
+  <link rel="preconnect" href="//dpm.demdex.net">
+  <link rel="preconnect" href="//cm.everesttech.net">
+  <link rel="preconnect" href="//techmarketingdemos.tt.omtrdc.net">
+  <link rel="dns-prefetch" href="//dpm.demdex.net">
+  <link rel="dns-prefetch" href="//cm.everesttech.net">
+  <link rel="dns-prefetch" href="//techmarketingdemos.tt.omtrdc.net">
+
+  <!-- （選用）簡單 data layer；也可改由 Launch 設定 -->
+  <script>
+    window.digitalData = {
+      page: { pageInfo: { pageName: "home" } }
+    };
+  </script>
+
+  <!-- Anti-flicker（避免在套用 Offer 前閃屏） -->
+  <style id="at-body-style">body{opacity:0!important;}</style>
+  <script>
+    // 保險機制：最多隱藏 3 秒，避免整頁長期隱形
+    setTimeout(function(){
+      var s = document.getElementById("at-body-style");
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    }, 3000);
+  </script>
+
+  <!-- Adobe Launch（需包含 at.js；以 defer，確保 DOM 解析後再執行） -->
+  <!-- ⚠️ 請替換成你自己環境的 Launch 程式碼（以下為示例代碼） -->
+  <script
+    src="https://assets.adobedtm.com/c88561b17244/34dbf331cabd/launch-6e41b0bf85df-development.min.js"
+    defer>
+  </script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", Arial, sans-serif; line-height: 1.55; padding: 24px; }
+    code { background: #f6f8fa; padding: 2px 6px; border-radius: 4px; }
+    .note { background: #fffbe6; border: 1px solid #ffe58f; padding: 12px; border-radius: 8px; margin: 16px 0; }
+    .box { border: 1px dashed #bbb; padding: 16px; border-radius: 8px; margin: 16px 0; }
+  </style>
+</head>
+
+<body>
+  <h1>Adobe Target Demo（預設改 #0815test；可切換成改 h1）</h1>
+  <p>此頁示範 <strong>Form-Based</strong> + <code>getOffer</code>/<code>applyOffer(selector)</code> 的基本流程。</p>
+
+  <div class="note">
+    <strong>使用說明：</strong>
+    <ol>
+      <li>Target 活動使用 <em>Form-Based</em>，Location 名稱請填 <code>0815test</code>（和本頁 mbox 名稱一致）。</li>
+      <li>活動狀態需為 <em>Approved/Active</em>，且 URL targeting 要命中此頁網址（如 <code>localhost</code>）。</li>
+      <li>若你想直接替換最上方 <code>&lt;h1&gt;</code>，把下方程式碼中的 <code>APPLY_TO_SELECTOR</code> 改為 <code>"h1"</code> 即可。</li>
+      <li>建議以 <em>QA URL</em> 或在網址加上 <code>?mboxDebug=1&amp;mboxTrace=window</code> 來檢查是否命中活動/體驗。</li>
+    </ol>
+  </div>
+
+  <div class="box">
+    <h3>mbox 容器（Default Content）</h3>
+    <div id="0815test" class="mboxDefault">
+      <p>這是預設內容（Default）。若 Target 活動命中並回傳 Offer，將以 Offer 內容替換。</p>
+    </div>
+  </div>
+
+  <hr/>
+
+  <p>
+    <button id="btnForce">手動重新請求 Offer</button>
+    <span id="status" style="margin-left:8px;color:#666"></span>
+  </p>
+
+  <script>
+    // === 你可以在這裡切換要替換的元素 ===
+    // 預設替換 #0815test 容器；若想直接改 <h1>，把下行改成: const APPLY_TO_SELECTOR = "h1";
+    const APPLY_TO_SELECTOR = "#0815test";
+
+    // （選用）若頁面載入時 AppMeasurement 存在，設定 pageName 以避免報表出現 undefined
+    (function setPageNameIfAppMeasurementExists() {
+      try {
+        if (window.s && !window.s.pageName) {
+          window.s.pageName = (document.title || "0815test") + "";
+          console.log("ℹ️ AppMeasurement pageName set to:", window.s.pageName);
+        } else {
+          console.log("ℹ️ The page name is:",
+            (window.s && window.s.pageName) ||
+            (window.digitalData && window.digitalData.page && window.digitalData.page.pageInfo && window.digitalData.page.pageInfo.pageName) ||
+            "undefined"
+          );
+        }
+      } catch (e) { /* 靜默處理 */ }
+    })();
+
+    function removeAntiFlicker() {
+      var s = document.getElementById("at-body-style");
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    }
+
+    // 發送並套用 0815test 的 Offer（selector 版）
+    function requestOffer0815() {
+      console.log("🌐 Requesting offer for mbox=0815test...");
+      const $status = document.getElementById("status");
+      if ($status) $status.textContent = "請求中…";
+
+      try {
+        adobe.target.getOffer({
+          mbox: "0815test",
+          success: function (offers) {
+            console.log("📦 Target offer response:", offers);
+            if (offers && offers.length > 0) {
+              // ✅ 用 selector 明確指定要替換的容器（可改成 "h1" 測試直接更改標題）
+              adobe.target.applyOffer({
+                selector: APPLY_TO_SELECTOR,
+                offer: offers
+              });
+              console.log("✅ Offer applied to", APPLY_TO_SELECTOR);
+              if ($status) $status.textContent = "Offer 已套用 → " + APPLY_TO_SELECTOR;
+            } else {
+              console.warn("⚠️ Offer is empty. 檢查 activity / audience / URL targeting / location 名稱是否正確。");
+              if ($status) $status.textContent = "未收到 Offer（空）";
+            }
+          },
+          error: function (status, error) {
+            console.error("❌ Target getOffer Error:", status, error);
+            if ($status) $status.textContent = "getOffer 失敗：" + status;
+          }
+        });
+      } catch (err) {
+        console.error("❌ adobe.target not ready or getOffer failed:", err);
+        if ($status) $status.textContent = "SDK 尚未就緒或 getOffer 例外";
+      } finally {
+        removeAntiFlicker();
+      }
+    }
+
+    // 等待 at.js 載入完成後再呼叫（避免 DOMContentLoaded 時 SDK 尚未可用）
+    function waitForTargetAndRun(maxWaitMs) {
+      var start = Date.now();
+      (function poll() {
+        var ready = !!(window.adobe && adobe.target && typeof adobe.target.getOffer === "function");
+        if (ready) {
+          console.log("✅ adobe.target SDK ready");
+          removeAntiFlicker();
+          requestOffer0815();
+          return;
+        }
+        if (Date.now() - start > (maxWaitMs || 5000)) {
+          console.error("⏰ Timeout waiting for Adobe Target SDK.");
+          removeAntiFlicker();
+          var $status = document.getElementById("status");
+          if ($status) $status.textContent = "等待 SDK 逾時（5s）";
+          return;
+        }
+        setTimeout(poll, 100);
+      })();
+    }
+
+    // DOM Ready 後啟動輪詢，確保 at.js 已可用
+    document.addEventListener("DOMContentLoaded", function () {
+      waitForTargetAndRun(5000);
+
+      document.getElementById("btnForce").addEventListener("click", function(){
+        requestOffer0815();
+      });
+
+      // 若你要用 mboxTrace/mboxDebug，建議手動在網址加上：
+      // ?mboxDebug=1&mboxTrace=window
+      // 然後在 Network 找 Target delivery 請求 → Response 內的 trace 檢查「Matched Activities」
+      if (location.search.includes("mboxDebug") || location.search.includes("mboxTrace")) {
+        console.log("🧪 QA/Debug mode hints: 查看 Network → 查找 Target delivery，展開 trace 檢查是否命中活動/體驗。");
+      }
+    });
+  </script>
+</body>
+</html>

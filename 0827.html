@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>Adobe Target Demo – at_property + Page Load Request</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+  <!-- ★ 在 at.js 載入前，定義 global at_property，兼容 VEC 與 Delivery -->
+  <script>
+    window.targetPageParamsAll = function() {
+      return { "at_property": "REPLACE_WITH_YOUR_PROPERTY_TOKEN" };
+    };
+  </script>
+
+  <!-- Anti-flicker：避免頁面閃屏 -->
+  <style id="at-body-style">body{opacity:0!important;}</style>
+  <script>
+    setTimeout(function() {
+      var s = document.getElementById("at-body-style");
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    }, 3000);
+  </script>
+
+  <!-- Launch 程式碼（請替換為你的 Development embed） -->
+  <script src="https://assets.adobedtm.com/…/launch-…-development.min.js" defer></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; padding: 24px; }
+    .note { background: #fffbe6; border: 1px solid #ffe58f; padding: 12px; border-radius: 8px; margin: 16px 0; }
+    .box { border: 1px dashed #bbb; padding: 16px; border-radius: 8px; margin: 16px 0; }
+    #status { margin-left: 8px; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Adobe Target Demo（Offer 會直接套用到此 H1）</h1>
+  <p>使用 <code>Form-Based</code> + <code>getOffer/applyOffer(selector)</code>，並帶入 <code>at_property</code>。過程中請搭配 Launch Rule：「Load Target → Fire Page Load Request」。</p>
+
+  <div class="note">
+    <strong>使用說明：</strong>
+    <ul>
+      <li>Target 活動使用 Form-Based，Location 名稱為 <code>0815test</code>。</li>
+      <li>Launch Rule 須先執行 Custom Code → Load Target → Fire Page Load Request。</li>
+      <li>測試用網址可加上 <code>?mboxDebug=1&amp;mboxTrace=window</code>，方便驗證 Activity 是否命中。</li>
+    </ul>
+  </div>
+
+  <div class="box">
+    <h3>Default Content 容器</h3>
+    <div id="0815test" class="mboxDefault">
+      這是預設內容，若 Offer 成功回應，就會被替換。
+    </div>
+  </div>
+
+  <button id="btnForce">手動重新請求 Offer</button><span id="status"></span>
+
+  <script>
+    const APPLY_TO_SELECTOR = "h1"; // 若要換回容器請改為 "#0815test"
+
+    function removeAntiFlicker() {
+      const s = document.getElementById("at-body-style");
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+    }
+
+    (function setPageNameIfAppMeasurementExists() {
+      try {
+        if (window.s && !window.s.pageName) {
+          window.s.pageName = document.title || "0815test";
+          console.log("ℹ️ pageName:", window.s.pageName);
+        }
+      } catch (e) {}
+    })();
+
+    function requestOffer() {
+      console.log("Requesting offer for mbox=0815test…");
+      const status = document.getElementById("status");
+      status.textContent = "請求中…";
+
+      try {
+        adobe.target.getOffer({
+          mbox: "0815test",
+          success: function (offers) {
+            console.log("Offer回應：", offers);
+            if (offers && offers.length) {
+              adobe.target.applyOffer({ selector: APPLY_TO_SELECTOR, offer: offers });
+              console.log("套用 Offer 到", APPLY_TO_SELECTOR);
+              status.textContent = "Offer 已套用 → " + APPLY_TO_SELECTOR;
+            } else {
+              console.warn("Offer 為空，請檢查活動狀態、URL、Location 名稱");
+              status.textContent = "沒收到 Offer";
+            }
+          },
+          error: function (s, err) {
+            console.error("getOffer 錯誤：", s, err);
+            status.textContent = "getOffer 失敗：" + s;
+          }
+        });
+      } catch (e) {
+        console.error("SDK 尚未就緒或 getOffer 異常", e);
+        status.textContent = "SDK 尚未就緒";
+      } finally {
+        removeAntiFlicker();
+      }
+    }
+
+    function waitForSDK(maxWait = 5000) {
+      const start = Date.now();
+      (function poll() {
+        if (window.adobe && adobe.target && typeof adobe.target.getOffer === "function") {
+          console.log("Adobe Target SDK ready");
+          removeAntiFlicker();
+          requestOffer();
+          return;
+        }
+        if (Date.now() - start > maxWait) {
+          console.error("等待 SDK 逾時");
+          removeAntiFlicker();
+          document.getElementById("status").textContent = "等待 SDK 超時";
+          return;
+        }
+        setTimeout(poll, 100);
+      })();
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      waitForSDK(5000);
+      document.getElementById("btnForce").onclick = requestOffer;
+      if (location.search.includes("mboxDebug") || location.search.includes("mboxTrace")) {
+        console.log("QA 模式啟動，請查看 Network → Target delivery 請求中的 Matched Activities.");
+      }
+    });
+  </script>
+</body>
+</html>
